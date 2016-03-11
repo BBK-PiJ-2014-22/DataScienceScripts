@@ -20,14 +20,14 @@ AREA = {'UK': {'lat_min': 49.871159
        ,'London' : {'lat_min': 51.28
                    ,'lat_max': 51.686
                    ,'lon_min': -0.489
-                   ,'lon_max':0.236}
+                   ,'lon_max': 0.236}
        }       
 
 
-def getWMData(categories, apiKey, page=1, file_format='json', area = 'UK'):
+def getWMData(category, apiKey, page=1, file_format='json', area = 'UK'):
     '''Gets a full list of all search entries for a WikiMapia category'''
     
-    area = getArea(area)
+    box = getArea(area)
     
     wmurl = 'http://api.wikimapia.org/'
     params = { 'key'      : apiKey
@@ -36,11 +36,11 @@ def getWMData(categories, apiKey, page=1, file_format='json', area = 'UK'):
               ,'count'    : 100
               ,'page'     : page
               ,'coordsby' : 'latlon'
-              ,'lon_min'  : area['lon_min']
-              ,'lon_max'  : area['lon_max']
-              ,'lat_min'  : area['lat_min']
-              ,'lat_max'  : area['lat_max']
-              ,'category_or' : categories}
+              ,'lon_min'  : box['lon_min']
+              ,'lon_max'  : box['lon_max']
+              ,'lat_min'  : box['lat_min']
+              ,'lat_max'  : box['lat_max']
+              ,'category' : category}
               
     #Adds categories of interest to the query
     #Not needed unless I need a category keyword....
@@ -54,15 +54,14 @@ def getWMData(categories, apiKey, page=1, file_format='json', area = 'UK'):
 #        raise TypeError('Categories must be a str or iterable list-like object')
 
     response = requests.get(wmurl, params)
-    response.raise_for_status() 
-    return response
-#    result = response.json()
-    
+    places = response.json()['places']
+    result = {k['id']:k for k in places}
+    print(type(result))
     #Recursive call to get around the page limit of 100 results
-#    if len(result) == 100:
-#        result += getWMData(categories, apiKey, page+1, file_format)    
-
- #   return result  
+    if len(result) == 100:
+        result.update(getWMData(category, apiKey, page+1, file_format, area))
+    
+    return result  
 
 def getArea(area):
     return AREA[area]
@@ -85,7 +84,7 @@ def getRegionBoundaries(region_code):
               ,'request'      : 'GetFeature'
               ,'typeName'     : 'admingeo:EER_DEC_2013_GB_WGS84'
               ,'outputFormat' : 'json'
-              ,'cql_filter'   :  'EER13CD='+region_code
+              ,'cql_filter'   :  'EER13CD=%27'+region_code+'%27'
              }
     return requests.get(url, params)
     
