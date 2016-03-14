@@ -4,6 +4,10 @@ Created on Fri Mar 11 09:50:24 2016
 
 Scraping information on Public Social Housing Estates from WikiMapia
 
+Importing the wikimapia library will usually take some time as a list of regions
+is taken from the web and stored for use in the module. This will usually take
+~30 seconds
+
 @author: Jamie
 """
 
@@ -12,26 +16,15 @@ import requests
 #import json
 #import shapefile
 
-AREA = {'UK': {'lat_min': 49.871159
-              ,'lat_max': 55.811741
-              ,'lon_min': -6.37988
-              ,'lon_max': 1.76896}
-              
-       ,'London' : {'lat_min': 51.28
-                   ,'lat_max': 51.686
-                   ,'lon_min': -0.489
-                   ,'lon_max': 0.236}
-       }       
 
-
-def getWMData(category, apiKey, page=1, file_format='json', area = 'UK'):
+def getWMData(category, apiKey, page=1, file_format='json', area = 'London'):
     '''Gets a list of all proprties in an area for a WikiMapia category
 
 TODO: multiple category support
 TODO: spool through regions over a certain size
     '''
     
-    box = getArea(area)
+    box = getArea(area, 'EER13NM')
     
     wmurl = 'http://api.wikimapia.org/'
     params = { 'key'      : apiKey
@@ -56,9 +49,18 @@ TODO: spool through regions over a certain size
     
     return result  
 
-def getArea(area):
-    '''Temporary function for accessing different areas'''
-    return AREA[area]
+#TODO - Rewrite to use the regions and to be able to use name or keu
+def getArea(key, key_type='EER13NM'):
+    '''Returns the bbox of the region identified by key
+    
+    Possible values for key_type:
+    EER13NM = name of the region
+    EER13CD = server ID for the region
+    '''
+    for i in regions:
+        if regions[i][key_type] == key:
+            return regions[i]['bbox']
+    raise KeyError(key + ' is not a recognised key of type '+key_type)
     
 def getRegions():
     '''Returns a dictionary of regions, with ID, EER13CD ID code, description bbox
@@ -82,13 +84,6 @@ def getRegions():
         result[i]['bbox'] = getBBox(getRegionBoundaries(result[i]['EER13CD']))
     
     return result
-
-
-#var thisRegCode = rList[thisPos];
-#var thisRegBoundsURL = 'http://maps.communities.gov.uk/geoserver/admingeo/ows?service=WFS&version=1.0.0';
-#thisRegBoundsURL += '&request=GetFeature&typeName=admingeo:EER_DEC_2013_GB_WGS84';
-#thisRegBoundsURL += '&outputFormat=text/javascript&cql_filter=EER13CD=%27' +  thisRegCode + '%27';
-
 
 def getRegionBoundaries(region_code):
     '''Access the boundaries of a given region code from the geoserver
@@ -136,5 +131,72 @@ def getBBox(coordinates, lon_key=0, lat_key=1):
            ,'lon_max': max(lon)
            }
     
-    
+#TODO - This should be replaced with the function after testing is complete
+regions = {'EER_DEC_2013_GB_WGS84.1': {'EER13CD': 'E15000001',
+  'EER13NM': 'North East',
+  'bbox': {'lat_max': 55.81107189590653,
+   'lat_min': 54.45117969612147,
+   'lon_max': -0.7884184387818132,
+   'lon_min': -2.689785011662573}},
+ 'EER_DEC_2013_GB_WGS84.10': {'EER13CD': 'S15000001',
+  'EER13NM': 'Scotland',
+  'bbox': {'lat_max': 60.86076144913198,
+   'lat_min': 54.63323825572365,
+   'lon_max': -0.7246094068773615,
+   'lon_min': -8.650007166993163}},
+ 'EER_DEC_2013_GB_WGS84.11': {'EER13CD': 'W08000001',
+  'EER13NM': 'Wales',
+  'bbox': {'lat_max': 53.4356924435458,
+   'lat_min': 51.37496878616603,
+   'lon_max': -2.649870111344756,
+   'lon_min': -5.670115637074575}},
+ 'EER_DEC_2013_GB_WGS84.2': {'EER13CD': 'E15000002',
+  'EER13NM': 'North West',
+  'bbox': {'lat_max': 55.188981362111676,
+   'lat_min': 52.947149605112386,
+   'lon_max': -1.9096222591042302,
+   'lon_min': -3.63978108010726}},
+ 'EER_DEC_2013_GB_WGS84.3': {'EER13CD': 'E15000003',
+  'EER13NM': 'Yorkshire and The Humber',
+  'bbox': {'lat_max': 54.55945197406109,
+   'lat_min': 53.301548289445854,
+   'lon_max': 0.1475836647068026,
+   'lon_min': -2.5647362796906266}},
+ 'EER_DEC_2013_GB_WGS84.4': {'EER13CD': 'E15000004',
+  'EER13NM': 'East Midlands',
+  'bbox': {'lat_max': 53.616366193040534,
+   'lat_min': 51.977281544140624,
+   'lon_max': 0.3556255856461102,
+   'lon_min': -2.034087170671713}},
+ 'EER_DEC_2013_GB_WGS84.5': {'EER13CD': 'E15000005',
+  'EER13NM': 'West Midlands',
+  'bbox': {'lat_max': 53.22622396058041,
+   'lat_min': 51.826078856543056,
+   'lon_max': -1.1721403438198337,
+   'lon_min': -3.2355407829691827}},
+ 'EER_DEC_2013_GB_WGS84.6': {'EER13CD': 'E15000006',
+  'EER13NM': 'Eastern',
+  'bbox': {'lat_max': 52.98837435650444,
+   'lat_min': 51.45111771422115,
+   'lon_max': 1.7629159916225028,
+   'lon_min': -0.7457016982769984}},
+ 'EER_DEC_2013_GB_WGS84.7': {'EER13CD': 'E15000007',
+  'EER13NM': 'London',
+  'bbox': {'lat_max': 51.69184784058426,
+   'lat_min': 51.286760163150866,
+   'lon_max': 0.33399571714980253,
+   'lon_min': -0.5102961470840263}},
+ 'EER_DEC_2013_GB_WGS84.8': {'EER13CD': 'E15000008',
+  'EER13NM': 'South East',
+  'bbox': {'lat_max': 52.1963232509333,
+   'lat_min': 50.57492329367059,
+   'lon_max': 1.4496584763156242,
+   'lon_min': -1.9572320539920278}},
+ 'EER_DEC_2013_GB_WGS84.9': {'EER13CD': 'E15000009',
+  'EER13NM': 'South West',
+  'bbox': {'lat_max': 52.11257970443276,
+   'lat_min': 49.864749468943316,
+   'lon_max': -1.485726604041387,
+   'lon_min': -6.418556174447501}}}
+
  
