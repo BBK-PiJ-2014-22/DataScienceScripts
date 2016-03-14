@@ -25,7 +25,11 @@ AREA = {'UK': {'lat_min': 49.871159
 
 
 def getWMData(category, apiKey, page=1, file_format='json', area = 'UK'):
-    '''Gets a full list of all search entries for a WikiMapia category'''
+    '''Gets a list of all proprties in an area for a WikiMapia category
+
+TODO: multiple category support
+TODO: spool through regions over a certain size
+    '''
     
     box = getArea(area)
     
@@ -56,7 +60,7 @@ def getWMData(category, apiKey, page=1, file_format='json', area = 'UK'):
     response = requests.get(wmurl, params)
     places = response.json()['places']
     result = {k['id']:k for k in places}
-    print(type(result))
+    
     #Recursive call to get around the page limit of 100 results
     if len(result) == 100:
         result.update(getWMData(category, apiKey, page+1, file_format, area))
@@ -64,9 +68,11 @@ def getWMData(category, apiKey, page=1, file_format='json', area = 'UK'):
     return result  
 
 def getArea(area):
+    '''Temporary function for accessing different areas'''
     return AREA[area]
     
 def getRegions():
+    '''Returns a dictionary of regions, with ID, EER13CD ID code and description'''
     url = 'http://maps.communities.gov.uk/geoserver/ows'
     params = { 'service'      : 'WFS'
               ,'version'      : '2.0.0'
@@ -75,16 +81,25 @@ def getRegions():
               ,'outputFormat' : 'json'
               ,'propertyname' : 'EER13CD,EER13NM'
              }
-    return requests.get(url, params)
+    result = requests.get(url, params).json()
+    return {k['id']:k['properties'] for k in result['features']}
+
+
+#var thisRegCode = rList[thisPos];
+#var thisRegBoundsURL = 'http://maps.communities.gov.uk/geoserver/admingeo/ows?service=WFS&version=1.0.0';
+#thisRegBoundsURL += '&request=GetFeature&typeName=admingeo:EER_DEC_2013_GB_WGS84';
+#thisRegBoundsURL += '&outputFormat=text/javascript&cql_filter=EER13CD=%27' +  thisRegCode + '%27';
+
 
 def getRegionBoundaries(region_code):
+    '''Access the boundaries of a given region code'''
     url = 'http://maps.communities.gov.uk/geoserver/admingeo/ows'
     params = { 'service'      : 'WFS'
               ,'version'      : '1.0.0'
               ,'request'      : 'GetFeature'
               ,'typeName'     : 'admingeo:EER_DEC_2013_GB_WGS84'
               ,'outputFormat' : 'json'
-              ,'cql_filter'   :  'EER13CD=%27'+region_code+'%27'
+              ,'cql_filter'   :  "EER13CD='"+region_code+"'"
              }
     return requests.get(url, params)
     
