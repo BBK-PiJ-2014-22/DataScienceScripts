@@ -17,7 +17,7 @@ import requests
 #import shapefile
 
 
-def getWMData(category, apiKey, page=1, file_format='json', area = 'London'):
+def getWMData(apiKey, category, page=1, file_format='json', area = 'London'):
     '''Gets a list of all proprties in an area for a WikiMapia category
 
 TODO: multiple category support
@@ -122,9 +122,8 @@ def getBBox(coordinates, lon_key=0, lat_key=1):
     the positions will parse correctly. Alternatively, if a dict structure is used
     then simply enter the correct keys.'''
  
-    lon = [i[0] for i in coordinates]   
-    lat = [i[1] for i in coordinates]
-    
+    lon = [i[lon_key] for i in coordinates]   
+    lat = [i[lat_key] for i in coordinates]
     return {'lat_min': min(lat)
            ,'lat_max': max(lat)
            ,'lon_min': min(lon)
