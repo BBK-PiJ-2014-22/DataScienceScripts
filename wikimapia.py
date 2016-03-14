@@ -61,7 +61,12 @@ def getArea(area):
     return AREA[area]
     
 def getRegions():
-    '''Returns a dictionary of regions, with ID, EER13CD ID code and description'''
+    '''Returns a dictionary of regions, with ID, EER13CD ID code, description bbox
+    
+    EER13CD = region code
+    EER13NM = region name description
+    bbox = {lat_min, lat_max, lon_min, lon_max}
+    '''
     url = 'http://maps.communities.gov.uk/geoserver/ows'
     params = { 'service'      : 'WFS'
               ,'version'      : '2.0.0'
@@ -70,8 +75,13 @@ def getRegions():
               ,'outputFormat' : 'json'
               ,'propertyname' : 'EER13CD,EER13NM'
              }
-    result = requests.get(url, params).json()
-    return {k['id']:k['properties'] for k in result['features']}
+    response = requests.get(url, params).json()
+    result = {k['id']:k['properties'] for k in response['features']}
+    
+    for i in result:
+        result[i]['bbox'] = getBBox(getRegionBoundaries(result[i]['EER13CD']))
+    
+    return result
 
 
 #var thisRegCode = rList[thisPos];
@@ -117,8 +127,8 @@ def getBBox(coordinates, lon_key=0, lat_key=1):
     the positions will parse correctly. Alternatively, if a dict structure is used
     then simply enter the correct keys.'''
  
-    lon = [i[0] for i in coordinates[0]]   
-    lat = [i for i in coordinates[1]]
+    lon = [i[0] for i in coordinates]   
+    lat = [i[1] for i in coordinates]
     
     return {'lat_min': min(lat)
            ,'lat_max': max(lat)
