@@ -46,17 +46,6 @@ TODO: spool through regions over a certain size
               ,'lat_max'  : box['lat_max']
               ,'category' : category}
               
-    #Adds categories of interest to the query
-    #Not needed unless I need a category keyword....
-#    try:
-#        if not isinstance(categories, str):
-#            params['category'] = categories[0]
-#            params['category_or'] = list(categories[1:])
-#        else:
-#            params['category'] = categories
-#    except TypeError:
-#        raise TypeError('Categories must be a str or iterable list-like object')
-
     response = requests.get(wmurl, params)
     places = response.json()['places']
     result = {k['id']:k for k in places}
@@ -92,7 +81,9 @@ def getRegions():
 
 
 def getRegionBoundaries(region_code):
-    '''Access the boundaries of a given region code'''
+    '''Access the boundaries of a given region code from the geoserver
+    
+    Will return as a list of lon/lat coordinates in list'''
     url = 'http://maps.communities.gov.uk/geoserver/admingeo/ows'
     params = { 'service'      : 'WFS'
               ,'version'      : '1.0.0'
@@ -101,7 +92,39 @@ def getRegionBoundaries(region_code):
               ,'outputFormat' : 'json'
               ,'cql_filter'   :  "EER13CD='"+region_code+"'"
              }
-    return requests.get(url, params)
+    #As region code is unique there can only be one result in the features list
+    response = requests.get(url, params).json()['features'][0]
+    list_coords = response['geometry']['coordinates'] 
+    #list_coords is returning a list of lists with 1 member which is a list 
+    #of lists of coords
+    #The below code converts this to a single list and must be 
+    
+    #This is non-Pythonic but a lot more understandable than a list comp
+    #TODO - Refactor and check assumption on geography
+    result = []
+    for j in list_coords:
+        sl = j[0]
+        for i in sl:
+            result.append(i)
+    return result
+
+def getBBox(coordinates, lon_key=0, lat_key=1):
+    '''Returns a dict with min and max lat and lon coords 
+ 
+    lon_key and lat_key represent the key required to extract lat and lon from
+    the list of coordinates. The default assumes it is a possitional data structure
+    (e.g. tuple, list) in lon/lat order. If they are in reverse order switching 
+    the positions will parse correctly. Alternatively, if a dict structure is used
+    then simply enter the correct keys.'''
+ 
+    lon = [i[0] for i in coordinates[0]]   
+    lat = [i for i in coordinates[1]]
+    
+    return {'lat_min': min(lat)
+           ,'lat_max': max(lat)
+           ,'lon_min': min(lon)
+           ,'lon_max': max(lon)
+           }
     
     
  
