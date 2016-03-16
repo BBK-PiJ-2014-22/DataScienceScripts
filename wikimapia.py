@@ -14,14 +14,14 @@ import areas
 #import shapefile
 
 
-def getWMData(apiKey, category, page=1, file_format='json', area = 'London'):
+def getWMData(apiKey, category, page=1, file_format='json', area = 'London', key_type='EER13NM', level='region'):
     '''Gets a list of all properties in an area for a WikiMapia category
 
 TODO: multiple category support
 TODO: spool through regions over a certain size
     '''
     
-    box = getArea(area, 'EER13NM')
+    box = getArea(area, key_type, level)
     
     wmurl = 'http://api.wikimapia.org/'
     params = { 'key'      : apiKey
@@ -37,7 +37,14 @@ TODO: spool through regions over a certain size
               ,'category' : category}
               
     response = requests.get(wmurl, params)
-    places = response.json()['places']
+    try:
+        places = response.json()['places']
+    except KeyError:
+        message =  'Key not found. Response object in condition:\n'
+        message += '\n URL:'+response.url
+        message += '\n status_code:'+str(response.status_code)
+        message += '\n text:'+response.text
+        raise KeyError(message)
     result = [k for k in places] #TODO - check if this is needed - json may be sufficient
     
     #Recursive call to get around the page limit of 100 results
