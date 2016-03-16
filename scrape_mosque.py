@@ -16,8 +16,9 @@ wmkey = 'E098D9EE-75F5D462-D06B8E5E-E7987CC9-5D1E23AC-FEF159D0-6DD91125-69BA7C7A
 
 result = []
 lads = areas.AREAS['lad']
+problems = [30,61,92,123,150,243]
 
-for i in range(len(lads)):
+for i in problems:
     print('Getting', lads[i]['name'], end=': ')
     try:
         found = wikimapia.getWMData(wmkey
@@ -41,8 +42,7 @@ for i in result:
     i['x'] = numpy.mean((i['bbox']['lon_min'], i['bbox']['lon_max']))
     i['y'] = numpy.mean((i['bbox']['lat_min'], i['bbox']['lat_max']))
         
-with open('london_mosques.csv', 'w') as csvfile:
-    fieldnames = ['id', 'title','x','y','bbox']
+with open('london_mosques.csv', 'a') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames = fieldnames, lineterminator='\n')
     writer.writeheader()
     for i in result:
