@@ -10,10 +10,7 @@ Splits up
 
 import areas
 
-def getStats(bbox_list):
-    
-    print(bbox_list[0].keys())
-    
+def getStats(bbox_list):    
     lats  = [i['lat_min'] for i in bbox_list]
     lats += [i['lat_max'] for i in bbox_list]
     lons  = [i['lon_min'] for i in bbox_list]
@@ -43,16 +40,31 @@ def splitBBox(bbox, x_divisions, y_divisions):
     A list of bboxes is returned.'''
     
     bbox_xlength = bbox['lon_max'] - bbox['lon_min']
-    bbox_ylength = bbox['lon_max'] - bbox['lon_min']
+    bbox_ylength = bbox['lat_max'] - bbox['lat_min']
     
     newbox_xl = bbox_xlength / x_divisions
     newbox_yl = bbox_ylength / y_divisions
     
+    print('xlength:',bbox_xlength)   #TODO - remove debug
+    print('ylength:',bbox_ylength)   #TODO - remove debug
+    print('box x:'  ,newbox_xl)      #TODO - remove debug
+    print('box y:'  ,newbox_yl)      #TODO - remove debug
     result = []
     
     for x in range(x_divisions):
         for y in range(y_divisions):
-            newbox = 
+            newbox = {'lon_min': bbox['lon_min']+(x*newbox_xl)
+                     ,'lon_max': bbox['lon_min']+((x+1)*newbox_xl)
+                     ,'lat_min': bbox['lat_min']+(y*newbox_yl)
+                     ,'lat_max': bbox['lat_min']+((y+1)*newbox_yl)
+                     }
+            if x == x_divisions-1:
+                newbox['lon_max'] = bbox['lon_max']
+            if y == y_divisions:
+                newbox['lat_max'] = bbox['lat_max']
+
+            result.append(newbox)
+    return result
 
 ladlist = areas.AREAS['lad']
 
@@ -63,4 +75,12 @@ top_bboxes = [i for i in all_bboxes if i['lat_max'] >= all_stats['lat_3rd']]
 
 bot_stats = getStats(bot_bboxes)
 top_stats = getStats(top_bboxes)
+
+newboxes = splitBBox(bot_stats,5,3)
+print()
+print(bot_stats)
+print()
+for i in newboxes:
+    print(i)
+
 
