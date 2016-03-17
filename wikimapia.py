@@ -39,17 +39,24 @@ TODO: spool through regions over a certain size
                   
     while True:
         response = requests.get(wmurl, params)
-        if response['code'] != 200:
-            if response['message'] == "IP address limit has been reached":
-                print('Waiting for IP Address request limit to reset')                
-                time.sleep(10)
-            else:
-                message = 'Unknown response type from WikiMapia API'
-                message += str(response.status_code)
-                message += response.text
-                raise RuntimeError(message)
+        if response.status_code != 200:
+            raise RuntimeError('Unknown Error in request. Response type: '+response.text )
         else:
-            places = response.json()['places']
+            try:
+                places = response.json()['places']
+                break
+            except KeyError:
+                if response.json()['debug']['message'] == "IP address limit has been reached":
+                    print('Waiting for IP Address request limit to reset')                
+                    time.sleep(10)
+                elif response.json()['debug']['code'] == 1004:
+                    print('Waiting for 5 minutes for key limit to reset')                
+                    time.sleep(305)
+                    
+                else:
+                    message = 'Unknown error type from WikiMapia API: '+str(response.json())
+                    raise RuntimeError(message)
+                
    
     result = [k for k in places] #TODO - check if this is needed - json may be sufficient
     
@@ -140,9 +147,23 @@ def getBBox(coordinates, lon_key=0, lat_key=1):
            ,'lon_min': min(lon)
            ,'lon_max': max(lon)
            }
+
+def getCategory(key, category, arealevel = 'wikimapia2', areaidtype = 'wmboxid'):
+    '''Gets all entries of a specific category in wikimapia'''
+    arealist = areas.AREAS[arealevel]
+    result = []
+    for i in arealist:
+        print("Getting", i[areaidtype],end=': -')
+        found = getWMData(key, category, page=1, area=i[areaidtype],
+                          key_type=areaidtype, level=arealevel)
+        print("Found:", len(found))
+        result += found
+    return result
+                
+        
     
-#TODO - This should be replaced wit a data call to the correct structure if an
-#       accessible data source can be found
-
-
- 
+    
+    
+    
+def storeFile(filelocation, result):
+    '''Stores property details in a specific file''' 

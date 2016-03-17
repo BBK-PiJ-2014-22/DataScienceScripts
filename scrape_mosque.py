@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+    # -*- coding: utf-8 -*-
 """
 Created on Mon Mar 14 16:33:53 2016
 
@@ -19,7 +19,7 @@ result = []
 wmareas = areas.AREAS['wikimapia2']
     
 for i in range(len(wmareas)):
-    if i % 30 == 0:
+    if i > 1 and i % 30 == 0:
         print("Waiting for API IP address limit to reset...")
         time.sleep(10)
         
