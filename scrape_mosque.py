@@ -11,25 +11,32 @@ import wikimapia
 import csv
 import numpy
 import areas
+import time
 
 wmkey = 'E098D9EE-75F5D462-D06B8E5E-E7987CC9-5D1E23AC-FEF159D0-6DD91125-69BA7C7A'
 
 result = []
-lads = areas.AREAS['lad']
-problems = [30,61,92,123,150,243]
-
-for i in problems:
-    print('Getting', lads[i]['name'], end=': ')
+wmareas = areas.AREAS['wikimapia2']
+    
+for i in range(len(wmareas)):
+    if i % 30 == 0:
+        print("Waiting for API IP address limit to reset...")
+        time.sleep(10)
+        
+    print('Getting', wmareas[i]['wmboxid'], end=': ')
     try:
         found = wikimapia.getWMData(wmkey
                                    ,1362
-                                   ,area = lads[i]['LAD12CD']
-                                   ,key_type ='LAD12CD'
-                                   ,level = 'lad')
+                                   ,area = wmareas[i]['wmboxid']
+                                   ,key_type ='wmboxid'
+                                   ,level = 'wikimapia2')
         print('- Found:',len(found))
         result += found
-    except KeyError:
-        print('API limit reached at key',i,'for LAD',lads[i]['name'])
+    except (KeyError, TypeError):
+        print(found)
+        print(found.url)
+        print(found.text)
+        print('Error experienced for key',i,'for WM Box',wmareas[i]['wmboxid'])
         break
                                
 
@@ -43,6 +50,7 @@ for i in result:
     i['y'] = numpy.mean((i['bbox']['lat_min'], i['bbox']['lat_max']))
         
 with open('london_mosques.csv', 'a') as csvfile:
+    fieldnames = ('id','title','x','y','bbox')
     writer = csv.DictWriter(csvfile, fieldnames = fieldnames, lineterminator='\n')
     writer.writeheader()
     for i in result:

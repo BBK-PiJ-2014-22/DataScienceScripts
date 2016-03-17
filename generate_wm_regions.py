@@ -9,6 +9,7 @@ Splits up
 """
 
 import areas
+import json
 
 def getStats(bbox_list):    
     lats  = [i['lat_min'] for i in bbox_list]
@@ -44,11 +45,6 @@ def splitBBox(bbox, x_divisions, y_divisions):
     
     newbox_xl = bbox_xlength / x_divisions
     newbox_yl = bbox_ylength / y_divisions
-    
-    print('xlength:',bbox_xlength)   #TODO - remove debug
-    print('ylength:',bbox_ylength)   #TODO - remove debug
-    print('box x:'  ,newbox_xl)      #TODO - remove debug
-    print('box y:'  ,newbox_yl)      #TODO - remove debug
     result = []
     
     for x in range(x_divisions):
@@ -66,6 +62,13 @@ def splitBBox(bbox, x_divisions, y_divisions):
             result.append(newbox)
     return result
 
+def containsPoint(bbox, point):
+    '''Returns true if lat/lon point is within bbox boundaries'''
+    return   (point[0] >= bbox['lat_min'] 
+          and point[0] <= bbox['lat_max']
+          and point[1] >= bbox['lon_min']
+          and point[1] <= bbox['lon_max'])
+
 ladlist = areas.AREAS['lad']
 
 all_bboxes = [i['bbox'] for i in ladlist]
@@ -73,14 +76,25 @@ all_stats  = getStats(all_bboxes)
 bot_bboxes = [i for i in all_bboxes if i['lat_max'] < all_stats['lat_3rd']]
 top_bboxes = [i for i in all_bboxes if i['lat_max'] >= all_stats['lat_3rd']]
 
+
 bot_stats = getStats(bot_bboxes)
 top_stats = getStats(top_bboxes)
 
-newboxes = splitBBox(bot_stats,5,3)
-print()
-print(bot_stats)
-print()
-for i in newboxes:
-    print(i)
 
+printBBoxlist('bot',bot_stats)
+printBBoxlist('top',top_stats)
 
+new_bottom_boxes = splitBBox(bot_stats,6,5)
+new_top_boxes = splitBBox(top_stats,5,6)
+
+all_boxes = new_bottom_boxes + new_top_boxes
+
+final = {'wikimapia':[]}
+
+for i in range(len(all_boxes)):
+    final['wikimapia'].append({'wmboxid':i ,'bbox':all_boxes[i]})
+    
+with open('wmboxes.txt', 'w') as output:
+    json.dump(final, output, sort_keys = True, indent = 2)
+
+output.close()
