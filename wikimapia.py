@@ -10,6 +10,7 @@ Scraping information on Public Social Housing Estates from WikiMapia
 #import GeoPy
 import requests
 import areas
+import time
 #import json
 #import shapefile
 
@@ -35,21 +36,26 @@ TODO: spool through regions over a certain size
               ,'lat_min'  : box['lat_min']
               ,'lat_max'  : box['lat_max']
               ,'category' : category}
-              
-    response = requests.get(wmurl, params)
-    try:
-        places = response.json()['places']
-    except KeyError:
-        message =  'Key not found. Response object in condition:\n'
-        message += '\n URL:'+response.url
-        message += '\n status_code:'+str(response.status_code)
-        message += '\n text:'+response.text
-        raise KeyError(message)
+                  
+    while True:
+        response = requests.get(wmurl, params)
+        if response['code'] != 200:
+            if response['message'] == "IP address limit has been reached":
+                print('Waiting for IP Address request limit to reset')                
+                time.sleep(10)
+            else:
+                message = 'Unknown response type from WikiMapia API'
+                message += str(response.status_code)
+                message += response.text
+                raise RuntimeError(message)
+        else:
+            places = response.json()['places']
+   
     result = [k for k in places] #TODO - check if this is needed - json may be sufficient
     
     #Recursive call to get around the page limit of 100 results
     if len(result) == 100:
-        result.update(getWMData(category, apiKey, page+1, file_format, area))
+        result.append(getWMData(apiKey, category, page+1, file_format, area, key_type, level))
     return result  
 
 def getArea(key, key_type='EER13NM', level='region'):
@@ -62,7 +68,7 @@ def getArea(key, key_type='EER13NM', level='region'):
     for i in areas.AREAS[level]:
         if i[key_type] == key:
             return i['bbox']
-    raise KeyError(key + ' is not a recognised key of type '+key_type+' for level '+level)
+    raise KeyError(str(key) + ' is not a recognised key of type '+key_type+' for level '+level)
     
 def getRegions():
     '''Returns a dictionary of regions, with ID, EER13CD ID code, description bbox
