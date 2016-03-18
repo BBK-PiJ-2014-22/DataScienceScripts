@@ -11,8 +11,9 @@ Scraping information on Public Social Housing Estates from WikiMapia
 import requests
 import areas
 import time
+import csv
 #import json
-#import shapefile
+import shapefile
 
 
 def getWMData(apiKey, category, page=1, file_format='json', area = 'London', key_type='EER13NM', level='region'):
@@ -61,8 +62,9 @@ TODO: spool through regions over a certain size
     result = [k for k in places] #TODO - check if this is needed - json may be sufficient
     
     #Recursive call to get around the page limit of 100 results
+    #TODO - Fix this as it is currently adding the list and not the elements of the list
     if len(result) == 100:
-        result.append(getWMData(apiKey, category, page+1, file_format, area, key_type, level))
+        result += getWMData(apiKey, category, page+1, file_format, area, key_type, level)
     return result  
 
 def getArea(key, key_type='EER13NM', level='region'):
@@ -159,11 +161,44 @@ def getCategory(key, category, arealevel = 'wikimapia2', areaidtype = 'wmboxid')
         print("Found:", len(found))
         result += found
     return result
-                
-        
+
+    
+def storeCSVFile(filelocation, result, writetype = 'w'):
+    '''Stores property details in a specific file as a CSV'''
+    #TODO - Fully implement and test
+    with open(filelocation, writetype) as csvfile:
+
+        writer = csv.DictWriter(csvfile
+                               ,fieldnames = sorted(result.keys())
+                               , lineterminator='\n')
+        writer.writeheader()
+        for i in result:
+            try:
+                writer.writerow(i)
+            except UnicodeEncodeError:
+                i['title'] = 'Unreadable Name'
+                writer.writerow(i)
+    csvfile.close()
+
+def storeShapeFile(filelocation, result):
+    #TODO - Implement
+    '''Stores results of a getCategory or getWMData query as a shapefile'''
+#   tags = {i['id']:i['title'] for j in edict for i in edict[j]['tags']}
+    #Convert the poly to straightforward  x/y coordinates
+#    for i in edict:
+#        edict[i]['newpoly']= []
+#        for j in edict[i]['polygon']:
+#            edict[i]['newpoly'] += [[[j['x'],j['y']]]]   
+    #Store tags as fields in their own rightfor
+ 
+#The below code worked in testing in the console
+#w = shapefile.Writer(shapefile.POLYGON)
+#w.field('id')
+#w.field('title')              
+#for i in edict:
+#    w.record(edict[i]['id'], edict[i]['title'])
+#    w.poly(edict[i]['newpoly'])
+#w.save('/shapefiles/councilestates')
     
     
     
-    
-def storeFile(filelocation, result):
-    '''Stores property details in a specific file''' 

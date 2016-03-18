@@ -13,8 +13,7 @@ import numpy
 import areas
 import time
 
-wmkey = 'E098D9EE-75F5D462-D06B8E5E-E7987CC9-5D1E23AC-FEF159D0-6DD91125-69BA7C7A'
-
+C
 result = []
 wmareas = areas.AREAS['wikimapia2']
     
